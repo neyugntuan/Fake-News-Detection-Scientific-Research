@@ -1,0 +1,4 @@
+Dataset: data/dataset_fullEDA.csv
+Text column: text
+Total samples: 31814
+Duplicate samples: 4146

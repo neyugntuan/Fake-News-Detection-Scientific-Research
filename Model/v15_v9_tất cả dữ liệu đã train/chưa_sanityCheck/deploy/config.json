@@ -1,0 +1,6 @@
+{
+  "model_type": "BiLSTM",
+  "vocab_size": 46169,
+  "trainer": "v7",
+  "best_epoch": 84
+}

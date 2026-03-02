@@ -1,0 +1,91 @@
+
+(fakeNews) C:\Users\khanp\Desktop\lab_fakenews\ProccessingData>python preprocessing_eda_pipeline.py
+=================================================================
+BƯỚC 1 — NẠP DỮ LIỆU
+=================================================================
+  File: dataset.csv
+  Cột text: 'text'
+  Tổng dòng ban đầu   : 22,075
+  Số cột              : 2
+  Cột                 : ['text', 'label']
+  Giá trị null (text) : 0
+  Giá trị null (label): 0
+  Bản ghi trùng lặp   : 0
+
+=================================================================
+BƯỚC 2 — LÀM SẠCH CƠ BẢN
+=================================================================
+  Sau làm sạch        : 22,075 dòng (đã loại 0 dòng null/trùng)
+  Label 0 (tin thật)  : 15,907
+  Label 1 (tin giả)   : 6,168
+  Tỷ lệ mất cân bằng  : 2.58:1
+
+=================================================================
+BƯỚC 3 — CHUẨN HÓA VĂN BẢN
+=================================================================
+  Độ dài TB (raw)     : 2192 ký tự
+  Độ dài TB (chuẩn hóa): 2160 ký tự
+  Token TB (trước SW) : 466.0
+  Token TB (sau SW)   : 398.8
+
+  Ví dụ chuẩn hóa:
+  RAW  : Sáng sớm 1/11, con trai 16 tuổi của Jessica Bond Ferguson phát hiện một con khỉ chạy trong sân nhà mình gần Heidelberg, ...
+  CLEAN: sáng sớm con trai tuổi jessica bond ferguson phát hiện con khỉ chạy sân nhà gần heidelberg bang mississippi thông báo mẹ...
+
+=================================================================
+BƯỚC 4 — FULL EDA AUGMENTATION
+=================================================================
+  Label 0 (major) : 15,907
+  Label 1 (minor) : 6,168
+  Cần sinh thêm   : 9,739 mẫu
+  Đã sinh         : 9,739 mẫu EDA
+
+  Tập dữ liệu cuối cùng:
+  ├── Tổng mẫu   : 31,814
+  ├── Label 0    : 15,907
+  └── Label 1    : 15,907
+
+=================================================================
+BƯỚC 5 — THỐNG KÊ TỪ VỰNG
+=================================================================
+  Kích thước từ vựng (label 0): 60,513
+  Kích thước từ vựng (label 1): 31,546
+  Top 10 từ - Label 0: [('bệnh', 49077), ('người', 44702), ('công', 33880), ('thể', 30670), ('cơ', 30475), ('nhân', 29253), ('động', 25644), ('điều', 25520), ('hiện', 23769), ('đầu', 23220)]
+  Top 10 từ - Label 1: [('bệnh', 36307), ('thể', 21952), ('cơ', 19071), ('nhân', 17016), ('người', 15078), ('chất', 13728), ('sinh', 12812), ('trị', 11305), ('điều', 11014), ('động', 10793)]
+
+=================================================================
+BƯỚC 6 — VẼ BIỂU ĐỒ
+=================================================================
+  Saved: fig1_data_overview.png
+  Saved: fig2_top_words.png
+  Saved: fig3_pipeline_diagram.png
+  Saved: fig4_eda_analysis.png
+  Saved: fig7_balance_comparison.png
+
+=================================================================
+BƯỚC 7 — LƯU KẾT QUẢ
+=================================================================
+  Saved: artifacts/dataset_fullEDA.csv
+  Saved: artifacts/dataset_cleaned.csv
+  Saved: artifacts/pipeline_config.pkl
+
+=================================================================
+TỔNG KẾT PIPELINE
+=================================================================
+  Dữ liệu gốc          : 22,075 mẫu
+  Sau làm sạch         : 22,075 mẫu
+  Tỷ lệ mất cân bằng   : 15907/6168 (2.6:1)
+  Mẫu EDA sinh thêm    : 9,739
+  Tập cuối (Full EDA)  : 31,814 mẫu — CÂN BẰNG 50/50
+
+  Output:
+    artifacts/dataset_fullEDA.csv  — Dataset sẵn sàng train
+    artifacts/dataset_cleaned.csv  — Dataset gốc đã clean (chưa EDA)
+    artifacts/fig1-7_*.png         — Biểu đồ báo cáo
+    artifacts/pipeline_config.pkl  — Config pipeline
+
+  Bước tiếp theo:
+    1. Copy artifacts/dataset_fullEDA.csv → data/dataset_fullEDA.csv
+    2. Chạy: python run.py
+
+(fakeNews) C:\Users\khanp\Desktop\lab_fakenews\ProccessingData>
