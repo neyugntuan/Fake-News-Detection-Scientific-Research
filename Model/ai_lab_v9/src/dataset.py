@@ -85,17 +85,28 @@ def load_data(path, min_freq=2, max_len=DEFAULT_MAX_LEN):
     # ── Bước 3: Encode sequences ─────────────────────────────────
     unk_idx = vocab["<UNK>"]
     seqs = []
+    #duyệt qua từng token(câu) vd
+    #all_tokens = [
+    #["tin", "giả", "nhiều"],
+    #["tin", "thật", "abc"]
+    #]
+    #tokens = ["tin", "giả", "nhiều"]
+    #lookup vào vocab tìm value của key, nếu không tìm thấy trả về unk(1)
+    #vd tokens trở thành = [4,1,3]
+    #đưa vào s
     for tokens in all_tokens:
         s = [vocab.get(tok, unk_idx) for tok in tokens]
         seqs.append(s)
 
     # ── Bước 4: Pad / truncate sequences ────────────────────────
-    X = np.zeros((len(seqs), max_len), dtype=np.int64)
-    lengths = np.zeros(len(seqs), dtype=np.int64)
-    for i, s in enumerate(seqs):
+    X = np.zeros((len(seqs), max_len), dtype=np.int64) #tạo ma trận số 0
+                                                       #[số dòng(số câu) = số câu được encode, số cột = 256 mặc định]
+    lengths = np.zeros(len(seqs), dtype=np.int64)      #lưu độ dài thật
+    for i, s in enumerate(seqs):                       # trả về cặp(index(i), value(s))
         length = min(len(s), max_len)
-        X[i, :length] = s[:length]
-        lengths[i] = length
+        X[i, :length] = s[:length]    #list[start:end] #gán biến s cho X dòng thứ i, từ cột 0 đến cột length(256)
+        #==X[i, 0:length] = s[0:length]
+        lengths[i] = length                            #ghi lại độ dài thật của câu
 
     n_trunc = int((lengths == max_len).sum())
     print(f"  max_len={max_len} | Bị cắt: {n_trunc} mẫu "
@@ -103,3 +114,6 @@ def load_data(path, min_freq=2, max_len=DEFAULT_MAX_LEN):
     print(f"  Dataset: {len(X):,} mẫu | Labels: {np.bincount(y)}")
 
     return X, y, len(vocab), vocab, lengths
+
+#X lúc này X =[[4 2 3 0 0] (dạng ma trận numpy array)
+#             [4 1 1 9 0]]

@@ -51,7 +51,7 @@ def train_final_model(X, y, vocab_size, vocab_dict, results_df, pos_weight=None)
             pass
 
     if best_epoch_from_exp and best_epoch_from_exp > 0:
-        final_epochs = max(int(best_epoch_from_exp * 1.1), 20)
+        final_epochs = max(int(best_epoch_from_exp * 1.1), 20) #Lấy best_epoch từ thí nghiệm, tăng thêm 10% đảm bảo tối thiểu 20 epochs
         print(f"\n  best_epoch từ thí nghiệm: {best_epoch_from_exp} "
               f"→ train final: {final_epochs} epochs")
     else:
@@ -73,13 +73,13 @@ def train_final_model(X, y, vocab_size, vocab_dict, results_df, pos_weight=None)
 
     # ── Lưu artifacts cho deploy ─────────────────────────────────
     model_path = "deploy/model_final.pt"
-    torch.save(model.state_dict(), model_path)
+    torch.save(model.state_dict(), model_path) #lưu weight và bias
 
     config = {
         "model_type" : "BiLSTM",
         "vocab_size"  : vocab_size,
         "max_len"     : 512,
-        "threshold"   : 0.5,
+        "threshold"   : 0.5, #ngưỡng để quyết định nhãn 0-1
     }
     with open("deploy/config.pkl", "wb") as f:
         pickle.dump(config, f)

@@ -33,20 +33,20 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)-8s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+) #Thiết lập log: in ra thời gian, mức độ (INFO, ERROR,...), message.
+logger = logging.getLogger(__name__) #logger dùng xuyên suốt API để ghi log trạng thái.
 
 # ============================================================
 # Configuration
 # ============================================================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.environ.get("MODEL_PATH", os.path.join(BASE_DIR, "modelv14", "model_final.pt"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__)) #thư mục chứa file app.
+MODEL_PATH = os.environ.get("MODEL_PATH", os.path.join(BASE_DIR, "modelv14", "model_final.pt")) #đường dẫn mặc định model, vocab, config; có thể override bằng biến môi trường
 CONFIG_PATH = os.environ.get("CONFIG_PATH", os.path.join(BASE_DIR, "modelv14", "config.pkl"))
 VOCAB_PATH = os.environ.get("VOCAB_PATH", os.path.join(BASE_DIR, "modelv14", "vocab_mapping.pkl"))
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu") #GPU nếu có, CPU nếu không.
 
 # max_len PHẢI KHỚP với training (dataset.py DEFAULT_MAX_LEN)
-MAX_LEN = 256
+MAX_LEN = 256 #chiều dài tối đa sequence khi encode text
 
 
 # ============================================================
@@ -159,7 +159,7 @@ def full_preprocess(text: str) -> str:
     return " ".join(tokens)
 
 
-class TextPreprocessor:
+class TextPreprocessor: #Lớp này encode text → tensor input cho model.
     def __init__(self, vocab: Dict[str, int], max_len: int = MAX_LEN):
         self.vocab = vocab
         self.max_len = max_len
@@ -172,23 +172,23 @@ class TextPreprocessor:
         batch = np.zeros((len(texts), self.max_len), dtype=np.int64)
         for i, text in enumerate(texts):
             # BƯỚC QUAN TRỌNG: clean text giống hệt pipeline training
-            cleaned = full_preprocess(text)
+            cleaned = full_preprocess(text) #Duyệt từng text, apply full_preprocess()
             # Tokenize đơn giản (text đã clean)
-            tokens = cleaned.split()
+            tokens = cleaned.split() #Split thành tokens
             # Lookup vocab
-            indices = [self.vocab.get(tok, self.unk_idx) for tok in tokens[:self.max_len]]
-            length = min(len(indices), self.max_len)
-            batch[i, :length] = indices[:length]
-        return torch.tensor(batch, dtype=torch.long)
+            indices = [self.vocab.get(tok, self.unk_idx) for tok in tokens[:self.max_len]] #Ánh xạ token → vocab index (UNK nếu không có)
+            length = min(len(indices), self.max_len) #lấy min(độ dài thật, 256)
+            batch[i, :length] = indices[:length] #Padding / truncate
+        return torch.tensor(batch, dtype=torch.long) #→ shape (batch_size, max_len)
 
 
 # ============================================================
 # Global State
 # ============================================================
 model: Optional[nn.Module] = None
-preprocessor: Optional[TextPreprocessor] = None
-config: dict = {}
-vocab: dict = {}
+preprocessor: Optional[TextPreprocessor] = None #object TextPreprocessor, encode text → tensor
+config: dict = {} #dict lưu thông số cấu hình model (vd: model_type,…)
+vocab: dict = {} #dict ánh xạ token → index
 
 
 def load_model():
@@ -196,16 +196,16 @@ def load_model():
 
     logger.info("Loading vocab from %s", VOCAB_PATH)
     with open(VOCAB_PATH, "rb") as f:
-        vocab = pickle.load(f)
+        vocab = pickle.load(f) #Load vocab
     logger.info("Vocab loaded: %d words", len(vocab))
 
     logger.info("Loading config from %s", CONFIG_PATH)
     with open(CONFIG_PATH, "rb") as f:
-        config = pickle.load(f)
+        config = pickle.load(f) #Load config
     logger.info("Config: %s", config)
 
-    vocab_size = len(vocab)
-    model_type = config.get("model_type", "BiLSTM")
+    vocab_size = len(vocab) #đặt vocab_size = chiều dài vocab
+    model_type = config.get("model_type", "BiLSTM") #Init model theo model_type trong config
 
     if model_type == "BiLSTM":
         model = BiLSTM(vocab_size)
@@ -213,20 +213,20 @@ def load_model():
         model = LSTM(vocab_size)
 
     logger.info("Loading weights from %s", MODEL_PATH)
-    state_dict = torch.load(MODEL_PATH, map_location=DEVICE)
-    model.load_state_dict(state_dict)
-    model.to(DEVICE)
+    state_dict = torch.load(MODEL_PATH, map_location=DEVICE) #load state_dict (weights & biases) từ file
+    model.load_state_dict(state_dict) #Load weights
+    model.to(DEVICE) #chuyển model lên GPU
     model.eval()
     logger.info("Model %s loaded on %s (%d params)",
-                model_type, DEVICE, sum(p.numel() for p in model.parameters()))
+                model_type, DEVICE, sum(p.numel() for p in model.parameters())) #numel:tổng phần tử trong tensor
 
-    preprocessor = TextPreprocessor(vocab, max_len=MAX_LEN)
+    preprocessor = TextPreprocessor(vocab, max_len=MAX_LEN) #Khởi tạo preprocessor
 
     # ── Selftest: kiểm tra preprocessing hoạt động ──────────────
     test_raw = "33 người chết ở bệnh viện Chợ Rẫy vì virus corona."
     test_clean = full_preprocess(test_raw)
     test_tokens = test_clean.split()
-    n_in_vocab = sum(1 for t in test_tokens if t in vocab)
+    n_in_vocab = sum(1 for t in test_tokens if t in vocab) #đếm số từ trong vocab
     logger.info("Selftest: '%s' → %d tokens, %d in vocab",
                 test_raw[:50], len(test_tokens), n_in_vocab)
 
@@ -236,10 +236,12 @@ def load_model():
 # ============================================================
 from contextlib import asynccontextmanager
 
+#Biến function này thành context manager async
 @asynccontextmanager
 async def lifespan(app):
-    load_model()
-    yield
+    load_model() #khi bật app
+    yield       #chạy app ở đây
+                #Chạy khi shut down
 
 app = FastAPI(
     title="Fake News Detection API",
@@ -249,30 +251,30 @@ app = FastAPI(
 )
 
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    CORSMiddleware, #Middleware xử lý CORS policy cho fe gọi api
+    allow_origins=["*"], #Cho phép tất cả domain
+    allow_credentials=True, #Cho phép gửi cookie/token
+    allow_methods=["*"],    #Cho phép tất cả HTTP methods
+    allow_headers=["*"],    #Cho phép tất cả headers: Authorization, Content-Type
 )
 
 
 # ============================================================
 # Schemas
 # ============================================================
-class PredictRequest(BaseModel):
+class PredictRequest(BaseModel): #định nghĩa request cho 1 câu
     text: str = Field(..., min_length=1, max_length=50000,
-                      description="Văn bản cần phân loại")
+                      description="Văn bản cần phân loại")#... bắt buộc (required)
 
-    @field_validator("text")
-    @classmethod
-    def text_not_empty(cls, v):
-        if not v.strip():
+    @field_validator("text") #Dùng để validate field text
+    @classmethod #biến hàm đó thành method của class (không phải của object)
+    def text_not_empty(cls, v): #v: giá trị của field text, cls:class PredictRequest
+        if not v.strip(): #xóa khoảng trắng đầu cuối, không xóa được thì là rỗng
             raise ValueError("Text không được rỗng")
         return v.strip()
 
 
-class BatchPredictRequest(BaseModel):
+class BatchPredictRequest(BaseModel): #định nghĩa request cho nhiều câu
     texts: List[str] = Field(..., min_length=1, max_length=64,
                              description="Danh sách văn bản (tối đa 64)")
 
@@ -285,7 +287,7 @@ class BatchPredictRequest(BaseModel):
         return cleaned
 
 
-class PredictionResult(BaseModel):
+class PredictionResult(BaseModel): #Lớp Kết quả của 1 câu
     text: str
     label: int
     label_name: str
@@ -293,13 +295,13 @@ class PredictionResult(BaseModel):
     probability: float
 
 
-class PredictResponse(BaseModel):
+class PredictResponse(BaseModel): #Lớp Response cho 1 câu
     success: bool = True
     prediction: PredictionResult
     inference_time_ms: float
 
 
-class BatchPredictResponse(BaseModel):
+class BatchPredictResponse(BaseModel): #Lớp Response nhiều câu
     success: bool = True
     predictions: List[PredictionResult]
     total: int
@@ -309,8 +311,8 @@ class BatchPredictResponse(BaseModel):
 # ============================================================
 # Inference
 # ============================================================
-@torch.no_grad()
-def predict_texts(texts: List[str]) -> List[dict]:
+@torch.no_grad() #tắt tính gradient
+def predict_texts(texts: List[str]) -> List[dict]: #Nhận vào list str trả ra List key-value
     if model is None or preprocessor is None:
         raise RuntimeError("Model chưa được load")
 
@@ -319,9 +321,9 @@ def predict_texts(texts: List[str]) -> List[dict]:
     probs = torch.sigmoid(logits)
 
     results = []
-    for text, prob in zip(texts, probs.cpu().tolist()):
-        label = 1 if prob >= 0.5 else 0
-        confidence = prob if label == 1 else 1 - prob
+    for text, prob in zip(texts, probs.cpu().tolist()): #zip ghép lại để python biết text nào đi với xác xuất nào, giữ đúng thứ tự dữ liệu
+        label = 1 if prob >= 0.5 else 0         #tolist để chuyển từ torch.tensor về list
+        confidence = prob if label == 1 else 1 - prob #tolist chỉ hoạt đông trên cpu
         results.append({
             "text": text,
             "label": label,
@@ -341,7 +343,7 @@ async def health_check():
         "status": "healthy" if model is not None else "model_not_loaded",
         "model_loaded": model is not None,
         "model_type": config.get("model_type", "BiLSTM"),
-        "vocab_size": len(vocab) if isinstance(vocab, dict) else 0,
+        "vocab_size": len(vocab) if isinstance(vocab, dict) else 0, #nếu vocab là kiểu dict
         "device": str(DEVICE),
         "version": "3.0.0",
     }
@@ -351,12 +353,12 @@ async def health_check():
 async def predict_single(request: PredictRequest):
     if model is None:
         raise HTTPException(status_code=503, detail="Model chưa được load")
-    start = time.perf_counter()
+    start = time.perf_counter() #đo thời gian đến micro giây
     results = predict_texts([request.text])
     elapsed_ms = (time.perf_counter() - start) * 1000
     return PredictResponse(
-        prediction=PredictionResult(**results[0]),
-        inference_time_ms=round(elapsed_ms, 3),
+        prediction=PredictionResult(**results[0]), #** unpack (giải nén) dictionary thành các keyword arguments.
+        inference_time_ms=round(elapsed_ms, 3), #"text": "hello" => text="hello"
     )
 
 
@@ -421,4 +423,4 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False, log_level="info")
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=False, log_level="info") #tắt tự restart sever khi code thay đổi, log_level: thông tin bình thường

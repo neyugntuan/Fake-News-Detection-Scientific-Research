@@ -32,17 +32,17 @@ if os.path.exists(DATA_PATH):
     df = pd.read_csv(DATA_PATH)
 
     # Tự động nhận diện cột text
-    if "text" in df.columns:
-        text_col = "text"
+    if "text" in df.columns: #Nếu trong danh sách cột có chứa "text"
+        text_col = "text"   #Gán tên cột text
     elif "post_message" in df.columns:
         text_col = "post_message"
     else:
         print(f"  Không tìm thấy cột text! Các cột có: {list(df.columns)}")
-        text_col = None
+        text_col = None #Gán text_col = None để tránh crash
 
     if text_col:
-        df = df.dropna(subset=[text_col])
-        dup_count = df.duplicated(subset=[text_col]).sum()
+        df = df.dropna(subset=[text_col]) #chỉ kiểm tra cột text thiếu -> xóa
+        dup_count = df.duplicated(subset=[text_col]).sum() #Đếm số dòng bị trùng
         print(f"\n Duplicate samples: {dup_count}")
         with open(f"{REPORT_DIR}/duplicate_check.txt", "w") as f:
             f.write(f"Dataset: {DATA_PATH}\n")
@@ -58,13 +58,13 @@ else:
 # 2. FOLD DISTRIBUTION CHECK
 # ============================================================
 if df is not None and text_col:
-    y = df["label"].values
+    y = df["label"].values #Lấy label
     skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
-    fold_stats = []
+    fold_stats = [] #Tạo list lưu thống kê
     print("\n Fold distribution (Label 0 / Label 1):")
-    for i, (_, val_idx) in enumerate(skf.split(np.zeros(len(y)), y), 1):
-        dist = np.bincount(y[val_idx])
-        print(f"  Fold {i:2d}: {dist}")
+    for i, (_, val_idx) in enumerate(skf.split(np.zeros(len(y)), y), 1): #tách thành 10 fold bỏ qua X do chỉ cần y để chia
+        dist = np.bincount(y[val_idx]) #Đếm số lượng mỗi class
+        print(f"  Fold {i:2d}: {dist}") #format số nguyên, rộng 2 ký tự
         fold_stats.append({"Fold": i, "Class_0": dist[0], "Class_1": dist[1]})
     pd.DataFrame(fold_stats).to_csv(
         f"{REPORT_DIR}/fold_distribution.csv", index=False

@@ -28,12 +28,31 @@ def run_stats(df=None):
     lstm_aucs   = df["LSTM_AUC"].values
     bilstm_aucs = df["BiLSTM_AUC"].values
 
+
+    #Kiểm tra xem 2 tập dữ liệu liên quan (paired) có khác nhau không
+
     # Paired t-test
     t_stat, p_ttest = ttest_rel(lstm_aucs, bilstm_aucs)
+                    #t_stat = -10.81
+                    #t âm -> Trung bình d = x(lstm) - y(bilstm) âm
+                    #→ model mới tốt hơn
+
+                    #dựa vào p_ttest để kết luận: 0.00018% kết quả quan sát được lệch như vậy
+                    #0.00018% là rất thấp → khó tin là do ngẫu nhiên
+                    #kết luận: có khác biệt thật
 
     # Wilcoxon signed-rank test (không giả định phân phối chuẩn)
     try:
         w_stat, p_wilcox = wilcoxon(lstm_aucs, bilstm_aucs)
+                    #di = xi - yi
+                    #bỏ số 0
+                    #lấy trị
+                    #Xếp hạng, lệch càng lớn rank càng cao
+                    #gán lại dấu cho rank
+                    #Tính tổng dương tổng âm
+                    #Stat là min(w+, w-)
+                    #Stat càng nhỏ thì càng khác biệt
+                    #Rank lệch hoàn toàn về 1 phía → p rất nhỏ (≈ < 0.05)
     except ValueError:
         # Xảy ra nếu tất cả sự khác biệt = 0
         w_stat, p_wilcox = 0.0, 1.0

@@ -31,12 +31,12 @@ C1 = "#E84855"   # đỏ          → label 1 (fake)
 CEDA = "#F18F01" # cam         → EDA augmented
 
 plt.rcParams.update({
-    "font.family"     : "DejaVu Sans",
-    "axes.spines.top" : False,
-    "axes.spines.right": False,
-    "axes.grid"       : True,
-    "grid.alpha"      : 0.3,
-    "figure.dpi"      : 150,
+    "font.family"     : "DejaVu Sans", #font chữ
+    "axes.spines.top" : False,         #bỏ đường viền trên
+    "axes.spines.right": False,        #bỏ đường viền phải
+    "axes.grid"       : True,          #bật grid: là các đường ngang dọc trên biểu đồ giúp đọc giá trị dễ hơn
+    "grid.alpha"      : 0.3,           #độ mờ của grid: 0->1
+    "figure.dpi"      : 150,           #độ phân giải
 })
 
 # ================================================================
@@ -138,17 +138,18 @@ STOPWORDS_VI = set([
 def normalize(text: str) -> str:
     """Pipeline chuẩn hóa 7 bước cho văn bản tiếng Việt."""
     # B1: Chuẩn hóa Unicode NFC
-    text = unicodedata.normalize("NFC", str(text))
+    text = unicodedata.normalize("NFC", str(text)) # chuẩn hóa dấu tiếng việt
     # B2: Chuyển về chữ thường
     text = text.lower()
     # B3: Xóa URL
     text = re.sub(r"http\S+|www\.\S+|<url>", " <URL> ", text)
     # B4: Xóa HTML tags
-    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"<[^>]+>", " ", text) #< :ký tự <, [^>]: mọi ký tự không phải >, + :lặp lại 1 hoặc nhiều lần, >: ký tự > || tức là bất kỳ chuỗi nào nằm giữa < ... >
     # B5: Thay số → token đặc biệt
-    text = re.sub(r"\b\d+([.,]\d+)*\b", " <NUM> ", text)
+    text = re.sub(r"\b\d+([.,]\d+)*\b", " <NUM> ", text) #\b \b:số đứng độc lập, \d+: 1 hoặc nhiều chữ số,([.,]\d+)* : số thập phân hoặc số có dấu phân cách
     # B6: Rút gọn ký tự lặp (≥3 lần → 2 lần)
-    text = re.sub(r"(.)\1{2,}", r"\1\1", text)
+    text = re.sub(r"(.)\1{2,}", r"\1\1", text) # . :bất kỳ ký tự nào, () :group 1 (lưu ký tự này lại), \1 :tham chiếu lại group 1, {2,} : lặp từ 2 lần trở lên
+                                               # r"\1\1" : 2 ký tự giống nhau
     # B7: Chỉ giữ chữ tiếng Việt, tiếng Anh, token đặc biệt, khoảng trắng
     text = re.sub(
         r"[^a-zàáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩ"
@@ -160,7 +161,7 @@ def normalize(text: str) -> str:
 
 def tokenize(text: str) -> list:
     """Tokenize đơn giản (regex-based)."""
-    return re.findall(r"\b\w+\b", text)
+    return re.findall(r"\b\w+\b", text)  #1 chuỗi gồm ≥1 ký tự thuộc a-z A-Z 0-9 _được bao quanh bởi 2 dấu cách
 
 def remove_stopwords(tokens: list) -> list:
     return [t for t in tokens if t not in STOPWORDS_VI and len(t) > 1]
@@ -170,13 +171,14 @@ df[TEXT_COL] = df[TEXT_COL].str.replace('_', ' ')# Thêm mới 25/02/2026
 df["text_normalized"] = df[TEXT_COL].apply(normalize)
 df["tokens"]          = df["text_normalized"].apply(tokenize)
 df["tokens_clean"]    = df["tokens"].apply(remove_stopwords)
-df["text_clean"]      = df["tokens_clean"].apply(lambda t: " ".join(t))
+df["text_clean"]      = df["tokens_clean"].apply(lambda t: " ".join(t)) #Lấy list token trong cột tokens_clean → ghép lại thành chuỗi → lưu vào cột text_clean
+                                                                        #" ".join(t): ghép các phần tử của list thành chuỗi, cách nhau bằng dấu cách
 
 # Thống kê
-df["len_raw"]   = df[TEXT_COL].str.len()
-df["len_norm"]  = df["text_normalized"].str.len()
-df["n_tokens"]  = df["tokens"].str.len()
-df["n_tokens_clean"] = df["tokens_clean"].str.len()
+df["len_raw"]   = df[TEXT_COL].str.len() #số ký tự của text gốc
+df["len_norm"]  = df["text_normalized"].str.len() #số ký tự sau khi chuẩn hóa text
+df["n_tokens"]  = df["tokens"].str.len() #số token trước khi remove stopwords
+df["n_tokens_clean"] = df["tokens_clean"].str.len() #số token sau khi remove stopwords
 
 print(f"  Độ dài TB (raw)     : {df.len_raw.mean():.0f} ký tự")
 print(f"  Độ dài TB (chuẩn hóa): {df.len_norm.mean():.0f} ký tự")
@@ -185,8 +187,8 @@ print(f"  Token TB (sau SW)   : {df.n_tokens_clean.mean():.1f}")
 
 # Ví dụ trước/sau chuẩn hóa
 print("\n  Ví dụ chuẩn hóa:")
-ex = df.iloc[3]
-print(f"  RAW  : {str(ex[TEXT_COL])[:120]}...")
+ex = df.iloc[3] #lấy dòng thứ 4 trong DataFrame
+print(f"  RAW  : {str(ex[TEXT_COL])[:120]}...") #in 120 ký tự đầu của text gốc
 print(f"  CLEAN: {ex['text_clean'][:120]}...")
 
 # ================================================================
@@ -237,11 +239,11 @@ SYNONYMS = {
 def synonym_replace(tokens: list, n: int = 2) -> list:
     """SR — Thay thế n từ bằng từ đồng nghĩa."""
     tokens = tokens.copy()
-    candidates = [i for i, w in enumerate(tokens) if w in SYNONYMS]
+    candidates = [i for i, w in enumerate(tokens) if w in SYNONYMS] #tìm vị trí có từ đồng nghĩa trong tokens
     if not candidates:
         return tokens
-    chosen = random.sample(candidates, min(n, len(candidates)))
-    for i in chosen:
+    chosen = random.sample(candidates, min(n, len(candidates))) #chọn ngẫu nhiên vị trí của candidates, nếu số candidate ít hơn n → lấy hết
+    for i in chosen: #lấy vị trí có từ đồng nghĩa đưa synomys để trả lại từ đồng nghĩa rồi gán cho vị trí của tokens của từ đồng nghĩa đó
         tokens[i] = random.choice(SYNONYMS[tokens[i]])
     return tokens
 
@@ -251,7 +253,7 @@ def random_swap(tokens: list, n: int = 1) -> list:
     if len(tokens) < 2:
         return tokens
     for _ in range(n):
-        i, j = random.sample(range(len(tokens)), 2)
+        i, j = random.sample(range(len(tokens)), 2) #len(tokens) = 5, range(5) = [0,1,2,3,4], lấy ra 2 random 2 phần tử i, j
         tokens[i], tokens[j] = tokens[j], tokens[i]
     return tokens
 
@@ -259,8 +261,8 @@ def random_delete(tokens: list, p: float = 0.10) -> list:
     """RD — Xóa mỗi từ với xác suất p."""
     if len(tokens) <= 5:
         return tokens
-    result = [w for w in tokens if random.random() > p]
-    return result if len(result) >= 5 else tokens
+    result = [w for w in tokens if random.random() > p]  #random.random(): sinh số ngẫu nhiên từ 0 -> 1, chữ nào sinh ra số >0.1 thì giữ lại
+    return result if len(result) >= 5 else tokens #nếu bị xóa xuống dưới 5 token(chữ) thì sẽ trả lại tokens(câu) gốc
 
 def random_insert(tokens: list, n: int = 1) -> list:
     """RI — Chèn từ đồng nghĩa vào vị trí ngẫu nhiên."""
@@ -269,10 +271,10 @@ def random_insert(tokens: list, n: int = 1) -> list:
     if not syn_tokens:
         return tokens
     for _ in range(n):
-        src     = random.choice(syn_tokens)
-        new_tok = random.choice(SYNONYMS[src])
-        pos     = random.randint(0, len(tokens))
-        tokens.insert(pos, new_tok)
+        src     = random.choice(syn_tokens) #Bốc 1 từ trong list chứa từ đồng nghĩa
+        new_tok = random.choice(SYNONYMS[src]) #Chọn ra từ đồng nghĩa
+        pos     = random.randint(0, len(tokens)) #Chọn vị trí chèn ngẫu nhiên từ 0 -> độ dài của câu
+        tokens.insert(pos, new_tok) #chèn từ đồng nghĩa vào vị trí ngẫu nhiên đó
     return tokens
 
 # Trọng số: ưu tiên SR > RI > RS > RD
@@ -281,10 +283,11 @@ EDA_WEIGHTS = [0.40,            0.25,          0.20,        0.15]
 EDA_NAMES   = ["SR (Synonym Replace)", "RI (Random Insert)",
                "RS (Random Swap)",     "RD (Random Delete)"]
 
-def apply_eda(tokens: list) -> tuple:
+def apply_eda(tokens: list) -> tuple: #Tuple là kiểu dữ liệu giống list nhưng không thay đổi được.
     """Trả về (tokens_aug, tên_kỹ_thuật)."""
-    idx  = random.choices(range(len(EDA_FUNCS)), weights=EDA_WEIGHTS, k=1)[0]
-    func = EDA_FUNCS[idx]
+    idx  = random.choices(range(len(EDA_FUNCS)), weights=EDA_WEIGHTS, k=1)[0] #Chọn ngẫu nhiên có trọng số, range(len(EDA_FUNCS)): từ 0->3, trọng số từ 0->3 là EDA_WEIGHTS, k = 1: lấy 1 kết quả
+                                                                            #random.choices() luôn trả về list vd: [1], lấy phần tử bằng cách idx = [1][0]
+    func = EDA_FUNCS[idx] #lấy ra 1 hàm, func trở thành hàm đó, #PYTHON cho phép lưu hàm vào biến
     return func(tokens), EDA_NAMES[idx]
 
 # ── Sinh dữ liệu ──────────────────────────────────────────────
@@ -293,26 +296,26 @@ df_minor = df[df.label == 1].copy()
 target   = len(df_major)
 gap      = target - len(df_minor)
 
-aug_texts    = []
-aug_methods  = []
-minor_tokens = df_minor["tokens_clean"].tolist()
+aug_texts    = [] #list lưu text sau khi tăng
+aug_methods  = [] #list lưu kỹ thuật EDA đã dùng
+minor_tokens = df_minor["tokens_clean"].tolist() #Lấy toàn bộ token của tin giả
 
-print(f"  Label 0 (major) : {len(df_major):,}")
-print(f"  Label 1 (minor) : {len(df_minor):,}")
-print(f"  Cần sinh thêm   : {gap:,} mẫu")
+print(f"  Label 0 (major) : {len(df_major):,}") #in số lượng mẫu 0, :, là để phân cách hàng nghìn
+print(f"  Label 1 (minor) : {len(df_minor):,}") #in số lượng mẫu 1
+print(f"  Cần sinh thêm   : {gap:,} mẫu")       #in số lượng mẫu cần sinh thêm
 
 attempts = 0
-while len(aug_texts) < gap:
-    src_tokens = random.choice(minor_tokens)
-    if len(src_tokens) < 5:
-        attempts += 1
-        if attempts > gap * 3:
+while len(aug_texts) < gap:  #lặp đến khi lắp vào đủ số câu gap
+    src_tokens = random.choice(minor_tokens) #bốc 1 câu ngẫu nhiên có label 1
+    if len(src_tokens) < 5:                    #nếu câu đó dưới 5 từ
+        attempts += 1                          #tăng biến đếm lên 1
+        if attempts > gap * 3:                 #nếu biến đếm lớn hơn
             break
-        continue
-    aug_tok, method = apply_eda(src_tokens)
-    aug_texts.append(" ".join(aug_tok))
-    aug_methods.append(method)
-    attempts = 0
+        continue                                #bỏ qua phần code phía dưới, lặp lần tiếp theo
+    aug_tok, method = apply_eda(src_tokens)    #Chọn ngẫu nhiên method EDA
+    aug_texts.append(" ".join(aug_tok))        #Lưu text vào aug_texts
+    aug_methods.append(method)                 #Lưu method vào aug_method
+    attempts = 0                               #set attempts = 0 để bắt đầu vòng lặp khác
 
 print(f"  Đã sinh         : {len(aug_texts):,} mẫu EDA")
 
@@ -329,7 +332,8 @@ df_final = pd.concat([
     df_major[["text_clean", "label", "source"]],
     df_minor[["text_clean", "label", "source"]],
     df_aug
-]).sample(frac=1, random_state=42).reset_index(drop=True)
+]).sample(frac=1, random_state=42).reset_index(drop=True) #lấy 100% dữ liệu, trộn thứ tự ngẫu nhiên
+                                                        #.reset_index(drop=True): do index đang lộn xộn
 
 print(f"\n  Tập dữ liệu cuối cùng:")
 print(f"  ├── Tổng mẫu   : {len(df_final):,}")

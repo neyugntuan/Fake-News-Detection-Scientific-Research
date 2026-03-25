@@ -34,12 +34,12 @@ def compute_metrics(model, X_val, y_val, device, batch_size=256):
     Dùng batched inference thay vì đẩy toàn bộ X_val lên GPU
     một lần (tránh OOM với dataset lớn).
     """
-    model.eval()
-    all_preds = []
+    model.eval() #Chuyển model sang evaluation mode
+    all_preds = [] #Tạo list chứa dự đoán
 
-    with torch.no_grad():
-        for i in range(0, len(X_val), batch_size):
-            xb     = torch.tensor(X_val[i:i+batch_size]).long().to(device)
+    with torch.no_grad(): #Không tính gradient
+        for i in range(0, len(X_val), batch_size): #(Start, stop, step)
+            xb     = torch.tensor(X_val[i:i+batch_size]).long().to(device) #vd X_val[0–255], 256–511, 512–767,... #Ép kiểu int64 cho embedding layer (LSTM/BiLSTM)
             logits = model(xb)
             probs  = torch.sigmoid(logits).cpu().numpy()
             preds  = (probs >= 0.5).astype(int)
@@ -75,16 +75,16 @@ def plot_metrics(df):
     metrics = ["Accuracy", "Precision", "Recall", "F1"]
 
     for m in metrics:
-        fig, ax = plt.subplots(figsize=(6, 4))
-        sns.boxplot(
-            data=df[[f"LSTM_{m}", f"BiLSTM_{m}"]],
+        fig, ax = plt.subplots(figsize=(6, 4)) #ax vùng vẽ trục
+        sns.boxplot( #Seaborn
+            data=df[[f"LSTM_{m}", f"BiLSTM_{m}"]], #mỗi cột → 1 boxplot
             palette=["#2E86AB", "#E84855"],
-            ax=ax,
+            ax=ax, #bảo seaborn: vẽ vào cái trục mình vừa tạo
         )
         ax.set_title(f"So sánh {m} — LSTM vs BiLSTM (10-Fold)")
         ax.set_ylabel(m)
-        ax.set_xticklabels(["LSTM", "BiLSTM"])
-        ax.grid(axis="y", alpha=0.3)
+        ax.set_xticklabels(["LSTM", "BiLSTM"])  #defaut LSTM_Accuracy, BiLSTM_Accuracy -> rút gọn lstm bilstm
+        ax.grid(axis="y", alpha=0.3) #vẽ đường ngang theo trục Y
 
         fig_path = f"experiments/figures/{m}_boxplot.png"
         plt.savefig(fig_path, dpi=300, bbox_inches="tight")
